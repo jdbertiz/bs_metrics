@@ -214,12 +214,11 @@ with PdfPages(pdf_path) as pdf:
 
             fig, ax = plt.subplots(figsize=(3.5 * len(chunk_weeks), 6))
             sns.heatmap(chunk_pivot, cmap="YlOrRd", linewidths=.5, annot=True, fmt=".0f", ax=ax)
-            ax.set_title(f'Total Visits Heatmap: Weeks {i + 1}', fontsize=14)
+            ax.set_title(f'Total Visits Heatmap: Weeks ', fontsize=14)
             plt.tight_layout()
 
             pdf.savefig(fig)
             plt.close(fig)
-
 
     # --- Page 4: Visits by Date Table ---
     if device_usage_data:
@@ -265,26 +264,99 @@ with PdfPages(pdf_path) as pdf:
 
         all_figures = []
 
-        for device, full_pivot in device_heatmaps.items():
-            # Split columns (weeks) into chunks
-            weeks = full_pivot.columns.tolist()
+        for device, pivot in device_heatmaps.items():
+            weeks = pivot.columns.tolist()
             num_chunks = ceil(len(weeks) / max_weeks_per_chart)
 
             for i in range(num_chunks):
                 chunk_weeks = weeks[i * max_weeks_per_chart:(i + 1) * max_weeks_per_chart]
-                chunk_pivot = full_pivot[chunk_weeks]
+                chunk_pivot = pivot[chunk_weeks]
 
                 fig, ax = plt.subplots(figsize=(3.5 * len(chunk_weeks), 6))
-                sns.heatmap(chunk_pivot, cmap=color_maps.get(device, "YlOrBr"),
-                            linewidths=.5, annot=True, fmt=".0f", ax=ax)
-                ax.set_title(f'{device} Visits Heatmap: Weeks {i + 1}', fontsize=12)
+                sns.heatmap(chunk_pivot, cmap=color_maps.get(device, "YlOrRd"), linewidths=.5, annot=True, fmt=".0f", ax=ax)
+                ax.set_title(f'{device} Visits Heatmap: Weeks', fontsize=14)
                 plt.tight_layout()
+
                 all_figures.append(fig)
 
-        # Save all chunked heatmaps to PDF
         for fig in all_figures:
             pdf.savefig(fig)
             plt.close(fig)
 
+    # --- Page 6: Pie Chart for "30 day report" by Timeframe ---
+    if "Usage by time" in workbook.sheetnames:
+        sheet = workbook["Usage by time"]
+        
+        # Extract the data from the 3rd column ("30 day report")
+        time_data = []
+        for row in sheet.iter_rows(min_row=8, values_only=True):  # Assuming row 1 is headers
+            if all(cell is None for cell in row):
+                break
+            hour_label = row[0]  # Hour label
+            day_7 = row[1]  # 7-day data
+            day_30 = row[2]  # 30-day data
+            
+            if isinstance(day_30, (int, float)):
+                time_data.append([hour_label, day_30])
+        
+        # Categorize time data into defined time frames
+        timeframes = {
+            'Early Morning': 0,
+            'Morning': 0,
+            'Afternoon': 0,
+            'Night': 0,
+            'Midnight': 0
+        }
 
-print(f"\nPDF report saved as '{pdf_path}'")
+        for hour_label, value in time_data:
+            # Extract hour from the label (assumes the format is 'Day hh AM/PM')
+            try:
+                hour = int(hour_label.split(' ')[1].split(':')[0])
+            except ValueError:
+                continue
+
+            # Assign values to the appropriate time frame
+            if 0 <= hour < 5:
+                timeframes['Early Morning'] += value
+            elif 5 <= hour < 12:
+                timeframes['Morning'] += value
+            elif 12 <= hour < 18:
+                timeframes['Afternoon'] += value
+            elif 18 <= hour < 21:
+                timeframes['Night'] += value
+            elif 21 <= hour < 24:
+                timeframes['Midnight'] += value
+
+        # Remove timeframes with a value of 0
+        timeframes = {key: value for key, value in timeframes.items() if value > 0}
+
+        # Plot pie chart
+        labels = list(timeframes.keys())
+        sizes = list(timeframes.values())
+
+        fig7, ax7 = plt.subplots(figsize=(8, 6))
+        wedges, texts, autotexts = ax7.pie(
+            sizes,
+            labels=labels,
+            autopct='%1.1f%%',
+            startangle=140,
+            colors=sns.color_palette("Set3", len(labels))
+        )
+
+        # Adjust the placement of the legend to be below the chart
+        ax7.set_title("Distribution of Views by Timeframe (30 Day Report)", fontsize=14)
+        plt.axis('equal')  # Equal aspect ratio ensures that pie chart is circular.
+
+        # Add the legend below the chart
+        # Format legend labels to include the number of items (sizes)
+        legend_labels = [f"{label} ({size})" for label, size in zip(labels, sizes)]
+        ax7.legend(wedges, legend_labels, title="Timeframes", loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=3)
+
+        # Adjust layout to make room for the legend
+        plt.tight_layout()
+
+        # Save to PDF
+        pdf.savefig(fig7)
+        plt.close(fig7)
+
+    print(f"\nPage 7: Pie chart for '30 day report' by timeframe added to the PDF.")
