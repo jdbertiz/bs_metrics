@@ -63,7 +63,7 @@ To use this script:
 
 - **Pie Chart** for "Viewers by Popular Type":
   
-  ![Pie Chart Example](![alt text](image-1.png))
+  ![Pie Chart Example](<img width="361" alt="image" src="https://github.com/user-attachments/assets/d1dcd5ed-196f-47a0-8190-2435e9029f54" />)
 
 - **Aggregated Table** showing content view summary:
 
@@ -77,7 +77,7 @@ To use this script:
   
 - **Heatmap** showing total visits by weekday:
 
-  ![Heatmap Example](![alt text](image-2.png))
+  ![Heatmap Example](<img width="890" alt="image" src="https://github.com/user-attachments/assets/a0dfbba0-e727-4cf7-a340-fd96a54de620" />)
 
 ## Notes
 
