@@ -91,6 +91,7 @@ for filename in os.listdir(folder_path):
 
 # Read data from the latest Usage by device sheet
 device_usage_data = []
+device_heatmaps = {}  # For Page 5
 
 if latest_file:
     file_path = os.path.join(folder_path, latest_file)
@@ -102,8 +103,9 @@ if latest_file:
 
         # Collect the data and limit it to the last 30 entries
         rows = list(sheet.iter_rows(min_row=2, values_only=True))  # Assuming row 1 is headers
-        last_30_rows = rows[-30:]  # Get the last 30 rows
-        
+        last_30_rows = rows[-30:]
+
+        # Page 3: Total visits per date
         for row in last_30_rows:
             if row[0] is None:
                 continue
@@ -113,6 +115,42 @@ if latest_file:
                 device_usage_data.append([date, visits])
             except Exception:
                 continue
+
+        # Page 5: Device-specific heatmaps
+        device_breakdown = {
+            'Desktop': 1,
+            'Mobile Display': [2, 3],
+            'Tablet': 4,
+            'Other Devices': 5
+        }
+
+        device_data = defaultdict(list)
+
+        for row in last_30_rows:
+            if row[0] is None:
+                continue
+            try:
+                date = pd.to_datetime(row[0])
+            except Exception:
+                continue
+
+            for device, col in device_breakdown.items():
+                if isinstance(col, list):
+                    value = sum(row[i] if isinstance(row[i], (int, float)) else 0 for i in col)
+                else:
+                    value = row[col] if isinstance(row[col], (int, float)) else 0
+                device_data[device].append((date, value))
+
+        # Build heatmap pivot for each device
+        for device, entries in device_data.items():
+            df_device_temp = pd.DataFrame(entries, columns=["Date", "Visits"])
+            df_device_temp.sort_values("Date", inplace=True)
+            df_device_temp.set_index("Date", inplace=True)
+            df_device_temp['Week'] = df_device_temp.index.to_series().dt.to_period('W').astype(str)
+            df_device_temp['Day'] = df_device_temp.index.to_series().dt.day_name()
+            pivot = df_device_temp.pivot_table(index='Day', columns='Week', values='Visits', aggfunc='sum')
+            pivot = pivot.reindex(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+            device_heatmaps[device] = pivot
 
 # Create DataFrame and Heatmap if data exists
 if device_usage_data:
@@ -142,10 +180,10 @@ with PdfPages(pdf_path) as pdf:
     plt.close(fig1)
 
     # --- Page 2: Table (plotted using matplotlib) ---
-    fig2, ax2 = plt.subplots(figsize=(10, len(df) * 0.4 + 1))  # Adjust height to fit rows
+    fig2, ax2 = plt.subplots(figsize=(10, len(df) * 0.4 + 1))
     ax2.axis('off')
     ax2.set_title("Aggregated Content View Summary", fontsize=14, fontweight='bold')
-    
+
     table = ax2.table(
         cellText=df.values,
         colLabels=df.columns,
@@ -154,17 +192,16 @@ with PdfPages(pdf_path) as pdf:
         colColours=['#CCCCCC'] * len(df.columns)
     )
 
-    # Adjust font and row height
     table.auto_set_font_size(False)
     table.set_fontsize(9)
-    table.scale(1.5, 1.5)  # Widen columns and increase row height
+    table.scale(1.5, 1.5)
     table.auto_set_column_width(col=list(range(len(df.columns))))
 
     pdf.savefig(fig2)
     plt.close(fig2)
 
     # --- Page 3: Heatmap ---
-    if device_usage_data:  # Only add the heatmap if we have data
+    if device_usage_data:
         pdf.savefig(fig3)
         plt.close(fig3)
 
@@ -185,23 +222,38 @@ with PdfPages(pdf_path) as pdf:
             colColours=['#CCCCCC'] * len(colLabels)
         )
 
-        # Adjust font size
         table.auto_set_font_size(False)
         table.set_fontsize(9)
         table.scale(1.5, 1.5)
 
-    # Adjust column widths dynamically
-    for i, col in enumerate(df_table.columns):
-        max_length = max(df_table[col].apply(lambda x: len(str(x))))
-        table.auto_set_column_width([i])  # Automatically adjust column width
+        for i, col in enumerate(df_table.columns):
+            table.auto_set_column_width([i])
 
-    # Alternatively, manually set the width for the date column
-    date_column_index = df_table.columns.get_loc('Date')  # Adjust this if needed
-    table.auto_set_column_width([date_column_index])  # Automatically adjust date column width
+        date_column_index = df_table.columns.get_loc('Date')
+        table.auto_set_column_width([date_column_index])
 
-    # Save to PDF
-    pdf.savefig(fig4)
-    plt.close(fig4)
+        pdf.savefig(fig4)
+        plt.close(fig4)
 
+    # --- Page 5: Device-specific Heatmaps ---
+    if device_heatmaps:
+        fig5, axes5 = plt.subplots(len(device_heatmaps), 1, figsize=(12, 4 * len(device_heatmaps)))
+        if len(device_heatmaps) == 1:
+            axes5 = [axes5]  # Ensure it's iterable
+
+        color_maps = {
+            'Desktop': "Blues",
+            'Mobile Display': "Greens",
+            'Tablet': "Oranges",
+            'Other Devices': "Purples"
+        }
+
+        for ax, (device, pivot) in zip(axes5, device_heatmaps.items()):
+            sns.heatmap(pivot, cmap=color_maps.get(device, "YlOrBr"), linewidths=.5, annot=True, fmt=".0f", ax=ax)
+            ax.set_title(f'{device} Visits Heatmap by Weekday', fontsize=12)
+
+        plt.tight_layout()
+        pdf.savefig(fig5)
+        plt.close(fig5)
 
 print(f"\nPDF report saved as '{pdf_path}'")
