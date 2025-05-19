@@ -200,10 +200,26 @@ with PdfPages(pdf_path) as pdf:
     pdf.savefig(fig2)
     plt.close(fig2)
 
-    # --- Page 3: Heatmap ---
+    # --- Page 3: Heatmap with Horizontal Chunking ---
     if device_usage_data:
-        pdf.savefig(fig3)
-        plt.close(fig3)
+        from math import ceil
+
+        max_weeks_per_chart = 5  # Same as Page 5 for consistency
+        weeks = pivot.columns.tolist()
+        num_chunks = ceil(len(weeks) / max_weeks_per_chart)
+
+        for i in range(num_chunks):
+            chunk_weeks = weeks[i * max_weeks_per_chart:(i + 1) * max_weeks_per_chart]
+            chunk_pivot = pivot[chunk_weeks]
+
+            fig, ax = plt.subplots(figsize=(3.5 * len(chunk_weeks), 6))
+            sns.heatmap(chunk_pivot, cmap="YlOrRd", linewidths=.5, annot=True, fmt=".0f", ax=ax)
+            ax.set_title(f'Total Visits Heatmap: Weeks {i + 1}', fontsize=14)
+            plt.tight_layout()
+
+            pdf.savefig(fig)
+            plt.close(fig)
+
 
     # --- Page 4: Visits by Date Table ---
     if device_usage_data:
@@ -235,12 +251,11 @@ with PdfPages(pdf_path) as pdf:
         pdf.savefig(fig4)
         plt.close(fig4)
 
-    # --- Page 5: Device-specific Heatmaps ---
+    # --- Page 5: Device-specific Heatmaps (horizontally split by weeks) ---
     if device_heatmaps:
-        fig5, axes5 = plt.subplots(len(device_heatmaps), 1, figsize=(12, 4 * len(device_heatmaps)))
-        if len(device_heatmaps) == 1:
-            axes5 = [axes5]  # Ensure it's iterable
+        from math import ceil
 
+        max_weeks_per_chart = 5  # You can change this based on how wide you want each chart
         color_maps = {
             'Desktop': "Blues",
             'Mobile Display': "Greens",
@@ -248,12 +263,28 @@ with PdfPages(pdf_path) as pdf:
             'Other Devices': "Purples"
         }
 
-        for ax, (device, pivot) in zip(axes5, device_heatmaps.items()):
-            sns.heatmap(pivot, cmap=color_maps.get(device, "YlOrBr"), linewidths=.5, annot=True, fmt=".0f", ax=ax)
-            ax.set_title(f'{device} Visits Heatmap by Weekday', fontsize=12)
+        all_figures = []
 
-        plt.tight_layout()
-        pdf.savefig(fig5)
-        plt.close(fig5)
+        for device, full_pivot in device_heatmaps.items():
+            # Split columns (weeks) into chunks
+            weeks = full_pivot.columns.tolist()
+            num_chunks = ceil(len(weeks) / max_weeks_per_chart)
+
+            for i in range(num_chunks):
+                chunk_weeks = weeks[i * max_weeks_per_chart:(i + 1) * max_weeks_per_chart]
+                chunk_pivot = full_pivot[chunk_weeks]
+
+                fig, ax = plt.subplots(figsize=(3.5 * len(chunk_weeks), 6))
+                sns.heatmap(chunk_pivot, cmap=color_maps.get(device, "YlOrBr"),
+                            linewidths=.5, annot=True, fmt=".0f", ax=ax)
+                ax.set_title(f'{device} Visits Heatmap: Weeks {i + 1}', fontsize=12)
+                plt.tight_layout()
+                all_figures.append(fig)
+
+        # Save all chunked heatmaps to PDF
+        for fig in all_figures:
+            pdf.savefig(fig)
+            plt.close(fig)
+
 
 print(f"\nPDF report saved as '{pdf_path}'")
