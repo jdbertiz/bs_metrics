@@ -185,10 +185,23 @@ with PdfPages(pdf_path) as pdf:
             colColours=['#CCCCCC'] * len(colLabels)
         )
 
+        # Adjust font size
         table.auto_set_font_size(False)
         table.set_fontsize(9)
         table.scale(1.5, 1.5)
-        pdf.savefig(fig4)
-        plt.close(fig4)
+
+    # Adjust column widths dynamically
+    for i, col in enumerate(df_table.columns):
+        max_length = max(df_table[col].apply(lambda x: len(str(x))))
+        table.auto_set_column_width([i])  # Automatically adjust column width
+
+    # Alternatively, manually set the width for the date column
+    date_column_index = df_table.columns.get_loc('Date')  # Adjust this if needed
+    table.auto_set_column_width([date_column_index])  # Automatically adjust date column width
+
+    # Save to PDF
+    pdf.savefig(fig4)
+    plt.close(fig4)
+
 
 print(f"\nPDF report saved as '{pdf_path}'")
