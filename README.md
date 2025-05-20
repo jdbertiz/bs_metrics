@@ -85,7 +85,45 @@ To use this script:
    Create a custom list, that would be the storage path of the events received by the specific page
    <img width="959" alt="image" src="https://github.com/user-attachments/assets/df5cdbed-f3e4-48a8-9c5a-7165432c6054" />
 
-3. 
+2. Create an event handler for each of the element being clicked on the page.
+`<li id="clicked1" ng-click="clicked($event);">`
+3. Link the controller file if there's an existing controller.
+`<script type="text/javascript" src="/sites/bspace.ciostage/Pages/brand_learning/learningController.js?v=20220215"></script>`
+4. Update the controller, make sure to add the ***`$scope`*** for this will be the event listener in the code structure
+```
+['$scope', 'constants', 'learningService', function ($scope, constants, learningService) {...
+```
+5.  Create a function that will be directly linked in to the service file, this function will be the one to send the payload
+```
+    $scope.clicked = function (event) {
+    	
+        const postData={};
+        var extendbtnid = $(event.currentTarget).attr("id");
+        
+        var spanContent;
+	    try {
+	        spanContent = $(event.currentTarget).find('a').text();
+	        if (!spanContent) {
+	            throw new Error("Element not found");
+	        }
+	    } catch (error) {
+	        spanContent = $(event.currentTarget).text();
+	    }
+		
+        postData.component_content=spanContent;
+        postData.page_executed="brand learning";
+        const now = new Date();
+		const isoDate = now.toISOString();
+		postData.Timestamp = isoDate;
+        postData.Event_ID = extendbtnid;
+        learningService.clickForm(postData);
+	};
+```
+6.  Create or update the service file -- if there's an existing. You can locate it on the html part
+```
+<script type="text/javascript" src="/sites/bspace.ciostage/Pages/brand_learning/learningService.js?v=20250429"></script>
+```
+7.  
 ## Notes
 
 - The script assumes that the filenames in the `BSREPORTS` folder follow a specific format (`SiteAnalyticsData_<date>.xlsx`), where the date is used to identify the latest file.
