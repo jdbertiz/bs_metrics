@@ -80,7 +80,7 @@ To use this script:
 
   <img width="866" alt="image" src="https://github.com/user-attachments/assets/dd1938e8-522b-4a63-958f-202ca1f8d6c4" />
 
-## Sharepoint Click Logs Workflow
+## Sharepoint Click Logs Workflow (Brand FAQ, Brand Learning)
 1. For Custom Click Logs
    Create a custom list, that would be the storage path of the events received by the specific page
    <img width="959" alt="image" src="https://github.com/user-attachments/assets/df5cdbed-f3e4-48a8-9c5a-7165432c6054" />
