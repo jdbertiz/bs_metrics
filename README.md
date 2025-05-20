@@ -63,7 +63,8 @@ To use this script:
 
 - **Pie Chart** for "Viewers by Popular Type":
   
-  ![Pie Chart Example](<img width="361" alt="image" src="https://github.com/user-attachments/assets/d1dcd5ed-196f-47a0-8190-2435e9029f54" />)
+  <img width="445" alt="image" src="https://github.com/user-attachments/assets/6a39d35d-4a1a-4bb1-bb94-e4b00db307d7" />
+
 
 - **Aggregated Table** showing content view summary:
 
@@ -77,7 +78,8 @@ To use this script:
   
 - **Heatmap** showing total visits by weekday:
 
-  ![Heatmap Example](<img width="890" alt="image" src="https://github.com/user-attachments/assets/a0dfbba0-e727-4cf7-a340-fd96a54de620" />)
+  <img width="866" alt="image" src="https://github.com/user-attachments/assets/dd1938e8-522b-4a63-958f-202ca1f8d6c4" />
+
 ## Power Automate Workflow
 1. For Custom Click Logs
    Create a custom list, that would be the storage path of the events received by the specific page
