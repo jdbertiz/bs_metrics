@@ -78,7 +78,12 @@ To use this script:
 - **Heatmap** showing total visits by weekday:
 
   ![Heatmap Example](<img width="890" alt="image" src="https://github.com/user-attachments/assets/a0dfbba0-e727-4cf7-a340-fd96a54de620" />)
+## Power Automate Workflow
+1. For Custom Click Logs
+   Create a custom list, that would be the storage path of the events received by the specific page
+   <img width="959" alt="image" src="https://github.com/user-attachments/assets/df5cdbed-f3e4-48a8-9c5a-7165432c6054" />
 
+3. 
 ## Notes
 
 - The script assumes that the filenames in the `BSREPORTS` folder follow a specific format (`SiteAnalyticsData_<date>.xlsx`), where the date is used to identify the latest file.
