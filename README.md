@@ -138,6 +138,8 @@ clickForm: function (postData) {
   return deferred.promise;
 }, 
 ```
+## Power Automate Workflow
+
 ## Notes
 
 - The script assumes that the filenames in the `BSREPORTS` folder follow a specific format (`SiteAnalyticsData_<date>.xlsx`), where the date is used to identify the latest file.
